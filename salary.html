@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时薪资计算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.dark-mode {
+            background-color: #2a3441;
+            color: #ffffff;
+        }
+        
+        .dark-mode .container {
+            background-color: #3a4756;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+        
+        .dark-mode .input-section {
+            background-color: #3a4756;
+            border-color: #5a6b7e;
+        }
+        
+        .dark-mode input, .dark-mode select {
+            background-color: #2a3441;
+            color: #ffffff;
+            border-color: #5a6b7e;
+        }
+        
+        .dark-mode input:focus, .dark-mode select:focus {
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3);
+        }
+        
+        .dark-mode button {
+            background-color: #4299e1;
+            color: #ffffff;
+        }
+        
+        .dark-mode button:hover {
+            background-color: #3182ce;
+        }
+        
+        .dark-mode .result-card {
+            background: linear-gradient(135deg, #4a5d78 0%, #2a3441 100%);
+        }
+        
+        .dark-mode .stat-item {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark-mode label {
+            color: #e2e8f0;
+        }
+
+        .dark-mode .info-text {
+            color: #a0aec0;
+        }
+        
+        .dark-mode .settings-summary {
+            color: #e2e8f0;
+        }
+        
+        .dark-mode .toggle-settings {
+            background-color: #4a5568;
+            color: #e2e8f0;
+            border-color: #718096;
+        }
+        
+        .dark-mode .toggle-settings:hover {
+            background-color: #2d3748;
+        }
+        
+        .dark-mode h1 {
+            color: #e2e8f0;
+        }
+        
+        .dark-mode .milestone-bar {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .dark-mode .milestone-fill {
+            background-color: #48bb78;
+        }
+        
+        .dark-mode .milestone-marker {
+            background-color: #ecc94b;
+        }
+        
+        .dark-mode #next-milestone {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .top-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            z-index: 1000;
+            gap: 10px;
+        }
+
+        .dark-mode-toggle {
+            background-color: #e2e8f0;
+            border: none;
+            color: #4a5568;
+            font-size: 14px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .dark-mode .dark-mode-toggle {
+            background-color: #4a5568;
+            color: #e2e8f0;
+        }
+
+        .language-toggle {
+            font-size: 14px;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            color: #4a5568;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .dark-mode .language-toggle {
+            background-color: #4a5568;
+            color: #e2e8f0;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            position: relative;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+            font-size: 28px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 50px 10px 10px;
+            }
+            
+            .container {
+                padding: 20px 15px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .form-group {
+                margin-bottom: 10px;
+            }
+            
+            input, select, button {
+                font-size: 14px;
+            }
+            
+            .stat-item {
+                min-width: 100%;
+                margin: 5px 0;
+            }
+            
+            .top-controls {
+                top: 5px;
+                right: 5px;
+            }
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        
+        .input-section.collapsed {
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .input-section.collapsed .form-group,
+        .input-section.collapsed .info-text,
+        .input-section.collapsed #start-btn {
+            display: none;
+        }
+        
+        .input-section.collapsed .settings-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .settings-summary {
+            display: none;
+            font-weight: 500;
+            color: #4a5568;
+        }
+        
+        .toggle-settings {
+            background-color: transparent;
+            color: #4a5568;
+            border: 1px solid #cbd5e0;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            width: auto;
+            margin-left: 10px;
+        }
+        
+        .toggle-settings:hover {
+            background-color: #edf2f7;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+        }
+        
+        button {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #3182ce;
+        }
+        
+        .result-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .result-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .result-card h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        
+        .amount {
+            font-size: 36px;
+            font-weight: 700;
+            margin: 15px 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            flex: 1;
+            min-width: 120px;
+            margin: 10px;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .currency {
+            font-size: 20px;
+            margin-right: 5px;
+        }
+        
+        .info-text {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #718096;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+            
+            .stat-item {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-controls">
+        <button class="dark-mode-toggle" id="dark-mode-toggle">🌓</button>
+        <button class="language-toggle" id="language-toggle">zh</button>
+    </div>
+    <div class="container">
+        <h1 id="title">实时薪资计算器</h1>
+        
+        <div class="input-section" id="input-section">
+            <div class="settings-summary" id="settings-summary">
+                <span id="summary-text">薪资设置</span>
+                <button id="toggle-settings" class="toggle-settings">展开设置</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="salary-type">薪资类型</label>
+                <select id="salary-type">
+                    <option value="yearly">年薪</option>
+                    <option value="monthly" selected>月薪</option>
+                    <option value="daily">日薪</option>
+                    <option value="hourly">时薪</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="salary-amount">薪资金额 (¥)</label>
+                <input type="number" id="salary-amount" placeholder="请输入薪资金额" min="0" step="0.01">
+            </div>
+            
+            <div class="form-group" id="work-hours-group">
+                <label for="work-hours">每日工作时长 (小时)</label>
+                <input type="number" id="work-hours" placeholder="请输入每日工作时长" min="0" max="24" step="0.5" value="8">
+            </div>
+            
+            <div class="form-group" id="work-days-group">
+                <label for="work-days">每周工作天数</label>
+                <input type="number" id="work-days" placeholder="请输入每周工作天数" min="1" max="7" value="5">
+            </div>
+            
+            <div class="form-group" id="work-start-time-group">
+                <label for="work-start-time">上班时间</label>
+                <input type="time" id="work-start-time" placeholder="请输入上班时间">
+            </div>
+            
+            <script>
+                // 设置 work-start-time 默认值为 9:00
+                document.getElementById('work-start-time').addEventListener('focus', function() {
+                    if (!this.value) {
+                        this.value = '09:00';
+                    }
+                });
+            </script>
+            
+        <button id="start-btn">开始计算</button>
+            
+            <p class="info-text">提示：输入您的薪资信息后，点击"开始计算"按钮查看实时薪资增长情况。如果填写了上班时间，将从该时间开始计算今日收入。</p>
+        </div>
+        
+        <div class="result-section hidden" id="result-section">
+            <div class="result-card">
+                <h2 id="salary-growing-text">💰 财富正在滚滚而来</h2>
+                <div class="amount pulse">
+                    <span class="currency">¥</span><span id="current-amount">0.00</span>
+                </div>
+                <p id="earned-so-far-text">💼 您的努力已经为您带来</p>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="per-second">0.00</div>
+                        <div class="stat-label">每秒 (¥)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="per-minute">0.00</div>
+                        <div class="stat-label">每分钟 (¥)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="per-hour">0.00</div>
+                        <div class="stat-label">每小时 (¥)</div>
+                    </div>
+                </div>
+                <div class="milestone-section">
+                    <h3>里程碑进度</h3>
+                    <div class="milestone-progress">
+                        <div class="milestone-bar">
+                            <div class="milestone-fill"></div>
+                        </div>
+                        <div class="milestone-markers"></div>
+                    </div>
+                    <div class="milestone-label">
+                        <span id="milestone-text">当前进度</span>
+                        <span id="milestone-amount">¥0.00</span>
+                    </div>
+                    <div id="next-milestone"></div>
+                </div>
+                <div class="control-buttons">
+                    <button id="pause-btn">暂停</button>
+                    <button id="reset-btn">重置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .control-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        
+        .control-buttons button {
+            width: 45%;
+            margin: 0 5px;
+        }
+
+        .milestone-section {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .milestone-progress {
+            margin-top: 10px;
+            position: relative;
+        }
+
+        .milestone-bar {
+            background-color: rgba(255, 255, 255, 0.3);
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .milestone-fill {
+            background-color: #4CAF50;
+            height: 100%;
+            width: 0;
+            transition: width 0.5s ease-out;
+        }
+
+        .milestone-markers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+        }
+
+        .milestone-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #FFD700;
+            border-radius: 50%;
+            top: -1px;
+            transform: translateX(-50%);
+            transition: background-color 0.3s ease;
+        }
+
+        .milestone-marker::after {
+            content: attr(data-label);
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 10px;
+            color: #ffffff;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 2px 4px;
+            border-radius: 3px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .milestone-marker:hover::after {
+            opacity: 1;
+        }
+
+        .milestone-label {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        #next-milestone {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #ffffff;
+            text-align: center;
+            padding: 5px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+        }
+    </style>
+
+    <script>
+        // 获取DOM元素
+        const salaryTypeEl = document.getElementById('salary-type');
+        const salaryAmountEl = document.getElementById('salary-amount');
+        const workHoursEl = document.getElementById('work-hours');
+        const workDaysEl = document.getElementById('work-days');
+        const workHoursGroup = document.getElementById('work-hours-group');
+        const workDaysGroup = document.getElementById('work-days-group');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const resultSection = document.getElementById('result-section');
+        const currentAmountEl = document.getElementById('current-amount');
+        const perSecondEl = document.getElementById('per-second');
+        const perMinuteEl = document.getElementById('per-minute');
+        const perHourEl = document.getElementById('per-hour');
+        const inputSection = document.getElementById('input-section');
+        const toggleSettingsBtn = document.getElementById('toggle-settings');
+        const settingsSummary = document.getElementById('settings-summary');
+        const summaryText = document.getElementById('summary-text');
+        
+        // 计算器状态
+        let isCalculating = false;
+        let isPaused = false;
+        let startTime;
+        let pauseTime;
+        let calculationInterval;
+        let hourlyRate = 0;
+        let isSettingsCollapsed = false;
+        let totalPausedTime = 0;
+        
+        // 里程碑数据
+        const milestones = [
+            { amount: 8,   label: { zh: "早餐自由", en: "Breakfast Freedom" } },
+            { amount: 12,  label: { zh: "通勤储备金", en: "Commute Fund" } },
+            { amount: 18,  label: { zh: "续命奶茶", en: "Bubble Tea Boost" } },
+            { amount: 25,  label: { zh: "便利店加餐", en: "Convenience Store Snack" } },
+            { amount: 35,  label: { zh: "完整午餐", en: "Full Lunch" } },
+            { amount: 50,  label: { zh: "下午茶拼单", en: "Afternoon Tea Share" } },
+            { amount: 70,  label: { zh: "备用口罩雨伞", en: "Spare Mask and Umbrella" } },
+            { amount: 88,  label: { zh: "精神食粮", en: "Mental Nourishment" } },
+            { amount: 100, label: { zh: "双人电影夜", en: "Movie Night for Two" } },
+            { amount: 120, label: { zh: "晚餐社交基金", en: "Dinner Social Fund" } },
+            { amount: 150, label: { zh: "零食补给站", en: "Snack Resupply" } },
+            { amount: 500, label: { zh: "应急小金库", en: "Emergency Fund" } }
+        ];
+        const totalAmount = milestones[milestones.length - 1].amount;
+
+        // 格式化数字为货币格式
+        function formatCurrency(value) {
+            return parseFloat(value).toFixed(2);
+        }
+
+        // 格式化时间为 HH:MM:SS 格式
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        // 根据薪资类型显示/隐藏相关字段
+        function updateFieldVisibility() {
+            const salaryType = salaryTypeEl.value;
+            
+            // 处理每日工作时长显示
+            if (salaryType === 'hourly') {
+                workHoursGroup.style.display = 'none';
+            } else {
+                workHoursGroup.style.display = 'block';
+            }
+            
+            // 处理每周工作天数显示
+            if (salaryType === 'daily' || salaryType === 'hourly') {
+                workDaysGroup.style.display = 'none';
+            } else {
+                workDaysGroup.style.display = 'block';
+            }
+        }
+
+        // 获取当前语言
+        function getCurrentLanguage() {
+            return languageToggle.textContent;
+        }
+        
+        // 切换设置区域的折叠状态
+        function toggleSettings() {
+            isSettingsCollapsed = !isSettingsCollapsed;
+            
+            if (isSettingsCollapsed) {
+                inputSection.classList.add('collapsed');
+                toggleSettingsBtn.textContent = '展开设置';
+                updateSettingsSummary();
+                // 隐藏所有表单组
+                const formGroups = inputSection.querySelectorAll('.form-group');
+                formGroups.forEach(group => group.style.display = 'none');
+            } else {
+                inputSection.classList.remove('collapsed');
+                toggleSettingsBtn.textContent = '收起设置';
+                // 显示所有表单组
+                const formGroups = inputSection.querySelectorAll('.form-group');
+                formGroups.forEach(group => group.style.display = 'block');
+                // 更新字段可见性
+                updateFieldVisibility();
+            }
+        }
+        
+        // 更新设置摘要文本
+        function updateSettingsSummary() {
+            const salaryType = salaryTypeEl.value;
+            const salaryAmount = parseFloat(salaryAmountEl.value) || 0;
+            const currentLang = getCurrentLanguage();
+            const texts = languages[currentLang];
+            
+            let typeText = '';
+            switch(salaryType) {
+                case 'yearly': typeText = texts.yearly; break;
+                case 'monthly': typeText = texts.monthly; break;
+                case 'daily': typeText = texts.daily; break;
+                case 'hourly': typeText = texts.hourly; break;
+            }
+            
+            summaryText.textContent = `${typeText}: ¥${formatCurrency(salaryAmount)}`;
+        }
+        
+        // 计算时薪
+        function calculateHourlyRate() {
+            const salaryType = salaryTypeEl.value;
+            const salaryAmount = parseFloat(salaryAmountEl.value) || 0;
+            const workHours = parseFloat(workHoursEl.value) || 8;
+            const workDays = parseFloat(workDaysEl.value) || 5;
+            
+            let hourly = 0;
+            
+            switch(salaryType) {
+                case 'yearly':
+                    // 年薪 ÷ (每周工作天数 × 52周 × 每天工作小时)
+                    hourly = salaryAmount / (workDays * 52 * workHours);
+                    break;
+                case 'monthly':
+                    // 月薪 ÷ (每周工作天数 × 4.33周 × 每天工作小时)
+                    hourly = salaryAmount / (workDays * 4.33 * workHours);
+                    break;
+                case 'daily':
+                    // 日薪 ÷ 每天工作小时
+                    hourly = salaryAmount / workHours;
+                    break;
+                case 'hourly':
+                    // 已经是时薪
+                    hourly = salaryAmount;
+                    break;
+            }
+            
+            return hourly;
+        }
+        
+        // 计算已经赚取的金额
+        function calculateEarnedAmount(startTime) {
+            const now = new Date();
+            const elapsedSeconds = (now - startTime) / 1000;
+            return (hourlyRate / 3600) * elapsedSeconds;
+        }
+
+        // 开始计算
+        function startCalculation() {
+            if (isCalculating && !isPaused) return;
+            
+            const salaryAmount = parseFloat(salaryAmountEl.value);
+            if (!salaryAmount || salaryAmount <= 0) {
+                alert(languages[getCurrentLanguage()].invalidSalary);
+                return;
+            }
+            
+            // 计算时薪
+            hourlyRate = calculateHourlyRate();
+            
+            if (isPaused) {
+                // 如果是从暂停状态恢复，更新总暂停时间
+                totalPausedTime += new Date() - pauseTime;
+                pauseBtn.textContent = languages[getCurrentLanguage()].pauseBtn;
+            } else {
+                // 获取上班时间
+                const workStartTimeEl = document.getElementById('work-start-time');
+                const workStartTime = workStartTimeEl.value;
+                
+                if (workStartTime) {
+                    // 如果设置了上班时间，计算从上班时间开始到现在的收入
+                    const [hours, minutes] = workStartTime.split(':');
+                    startTime = new Date();
+                    startTime.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+                    
+                    // 如果设置的时间晚于当前时间，假设是前一天的时间
+                    if (startTime > new Date()) {
+                        startTime.setDate(startTime.getDate() - 1);
+                    }
+                } else {
+                    // 如果没有设置上班时间，从当前时间开始计算
+                    startTime = new Date();
+                }
+                
+                // 显示结果区域
+                resultSection.classList.remove('hidden');
+                startBtn.classList.add('hidden');
+                
+                // 折叠整个设置区域
+                inputSection.classList.add('collapsed');
+                settingsSummary.style.display = 'flex';
+                isSettingsCollapsed = true;
+                toggleSettingsBtn.textContent = languages[getCurrentLanguage()].collapseSettings;
+                updateSettingsSummary();
+                
+                // 隐藏所有表单组
+                const formGroups = inputSection.querySelectorAll('.form-group');
+                formGroups.forEach(group => group.style.display = 'none');
+                
+                // 设置每秒、每分钟、每小时的收入
+                const perSecond = hourlyRate / 3600;
+                const perMinute = hourlyRate / 60;
+                
+                perSecondEl.textContent = formatCurrency(perSecond);
+                perMinuteEl.textContent = formatCurrency(perMinute);
+                perHourEl.textContent = formatCurrency(hourlyRate);
+                
+                totalPausedTime = 0;
+                
+                // 计算并显示当前已赚取的金额
+                const earnedAmount = calculateEarnedAmount(startTime);
+                currentAmountEl.textContent = formatCurrency(earnedAmount);
+                updateMilestone(earnedAmount);
+            }
+            
+            isCalculating = true;
+            isPaused = false;
+            
+            // 设置定时器，每100毫秒更新一次
+            calculationInterval = setInterval(updateAmount, 100);
+        }
+        
+        // 暂停计算
+        function pauseCalculation() {
+            if (!isCalculating || isPaused) return;
+            
+            clearInterval(calculationInterval);
+            isPaused = true;
+            pauseTime = new Date();
+            pauseBtn.textContent = '继续';
+        }
+        
+        // 更新金额和里程碑
+        function updateAmount() {
+            if (!isCalculating || isPaused) return;
+            
+            const earnedAmount = calculateEarnedAmount(startTime) - (hourlyRate / 3600) * (totalPausedTime / 1000);
+            currentAmountEl.textContent = formatCurrency(earnedAmount);
+
+            // 更新里程碑进度
+            updateMilestone(earnedAmount);
+        }
+
+        // 初始化里程碑标记
+        function initializeMilestoneMarkers() {
+            const markersContainer = document.querySelector('.milestone-markers');
+            markersContainer.innerHTML = ''; // 清空现有的标记
+            const currentLang = getCurrentLanguage();
+            milestones.forEach(milestone => {
+                const marker = document.createElement('div');
+                marker.className = 'milestone-marker';
+                marker.style.left = `${(milestone.amount / totalAmount) * 100}%`;
+                marker.setAttribute('data-label', `${milestone.label[currentLang]}: ¥${milestone.amount}`);
+                markersContainer.appendChild(marker);
+            });
+        }
+
+        // 更新里程碑进度
+        function updateMilestone(earnedAmount) {
+            const currentLang = getCurrentLanguage();
+            const texts = languages[currentLang];
+            const progress = Math.min(earnedAmount / totalAmount, 1);
+            const fillWidth = progress * 100;
+            document.querySelector('.milestone-fill').style.width = `${fillWidth}%`;
+
+            document.getElementById('milestone-text').textContent = texts.currentProgress;
+            document.getElementById('milestone-amount').textContent = `¥${formatCurrency(earnedAmount)}`;
+
+            // 更新里程碑标记的颜色和大小
+            const markers = document.querySelectorAll('.milestone-marker');
+            markers.forEach((marker, index) => {
+                if (earnedAmount >= milestones[index].amount) {
+                    marker.style.backgroundColor = '#4CAF50';
+                    marker.style.width = '16px';
+                    marker.style.height = '16px';
+                    marker.style.top = '-3px';
+                } else {
+                    marker.style.backgroundColor = '#FFD700';
+                    marker.style.width = '12px';
+                    marker.style.height = '12px';
+                    marker.style.top = '-1px';
+                }
+            });
+
+            // 显示下一个里程碑
+            const nextMilestone = milestones.find(m => m.amount > earnedAmount);
+            if (nextMilestone) {
+                const remainingAmount = nextMilestone.amount - earnedAmount;
+                const remainingTime = remainingAmount / (hourlyRate / 3600);
+                const nextMilestoneText = texts.nextMilestone
+                    .replace('{milestone}', nextMilestone.label[currentLang])
+                    .replace('{amount}', formatCurrency(remainingAmount))
+                    .replace('{time}', formatTime(remainingTime));
+                document.getElementById('next-milestone').textContent = nextMilestoneText;
+            } else {
+                document.getElementById('next-milestone').textContent = texts.allMilestonesReached;
+            }
+        }
+        
+        // 重置计算器
+        function resetCalculation() {
+            clearInterval(calculationInterval);
+            isCalculating = false;
+            isPaused = false;
+            totalPausedTime = 0;
+            
+        resultSection.classList.add('hidden');
+        startBtn.classList.remove('hidden');
+            
+            // 展开设置区域
+            inputSection.classList.remove('collapsed');
+            settingsSummary.style.display = 'none';
+            isSettingsCollapsed = false;
+            
+            // 显示所有表单组
+            const formGroups = inputSection.querySelectorAll('.form-group');
+            formGroups.forEach(group => group.style.display = 'block');
+            
+            // 更新字段可见性
+            updateFieldVisibility();
+            
+            currentAmountEl.textContent = '0.00';
+        }
+        
+        // 事件监听
+        startBtn.addEventListener('click', startCalculation);
+        pauseBtn.addEventListener('click', () => {
+            if (isPaused) {
+                startCalculation();
+            } else {
+                pauseCalculation();
+            }
+        });
+        resetBtn.addEventListener('click', resetCalculation);
+        toggleSettingsBtn.addEventListener('click', toggleSettings);
+        
+        // 薪资类型变化时更新字段可见性和设置摘要
+        salaryTypeEl.addEventListener('change', function() {
+            updateFieldVisibility();
+            updateSettingsSummary();
+            if (isCalculating) {
+                resetCalculation();
+                startCalculation();
+            }
+        });
+        
+        // 输入框变化时重新计算和更新设置摘要
+        [salaryAmountEl, workHoursEl, workDaysEl].forEach(el => {
+            el.addEventListener('input', function() {
+                updateSettingsSummary();
+                if (isCalculating) {
+                    resetCalculation();
+                    startCalculation();
+                }
+            });
+        });
+        
+        // 多语言支持
+        const languageToggle = document.getElementById('language-toggle');
+        const languages = {
+            zh: {
+                title: '实时薪资计算器',
+                salaryType: '薪资类型',
+                yearly: '年薪',
+                monthly: '月薪',
+                daily: '日薪',
+                hourly: '时薪',
+                salaryAmount: '薪资金额 (¥)',
+                workHours: '每日工作时长 (小时)',
+                workDays: '每周工作天数',
+                workStartTime: '上班时间',
+                startBtn: '开始计算',
+                infoText: '提示：输入您的薪资信息后，点击"开始计算"按钮查看实时薪资增长情况。如果填写了上班时间，将从该时间开始计算今日收入。',
+                salaryGrowing: '💰 财富正在滚滚而来',
+                earnedSoFar: '💼 您的努力已经为您带来',
+                perSecond: '每秒 (¥)',
+                perMinute: '每分钟 (¥)',
+                perHour: '每小时 (¥)',
+                pauseBtn: '暂停',
+                resetBtn: '重置',
+                continueBtn: '继续',
+                expandSettings: '展开设置',
+                collapseSettings: '收起设置',
+                invalidSalary: '请输入有效的薪资金额',
+                milestoneProgress: '里程碑进度',
+                currentProgress: '当前进度',
+                nextMilestone: '距离{milestone}还需 ¥{amount} ({time})',
+                allMilestonesReached: '恭喜！您已达成所有里程碑！',
+                settingsSummary: '薪资设置：'
+            },
+            en: {
+                title: 'Real-time Salary Calculator',
+                salaryType: 'Salary Type',
+                yearly: 'Yearly',
+                monthly: 'Monthly',
+                daily: 'Daily',
+                hourly: 'Hourly',
+                salaryAmount: 'Salary Amount (¥)',
+                workHours: 'Daily Work Hours',
+                workDays: 'Weekly Work Days',
+                workStartTime: 'Work Start Time',
+                startBtn: 'Start Calculation',
+                infoText: 'Tip: Enter your salary information, then click "Start Calculation" to see your real-time salary growth. If you enter a work start time, the calculation will begin from that time for today\'s earnings.',
+                salaryGrowing: '💰 Watch Your Wealth Grow',
+                earnedSoFar: '💼 Your hard work has earned you',
+                perSecond: 'Per Second (¥)',
+                perMinute: 'Per Minute (¥)',
+                perHour: 'Per Hour (¥)',
+                pauseBtn: 'Pause',
+                resetBtn: 'Reset',
+                continueBtn: 'Continue',
+                expandSettings: 'Expand Settings',
+                collapseSettings: 'Collapse Settings',
+                invalidSalary: 'Please enter a valid salary amount',
+                milestoneProgress: 'Milestone Progress',
+                currentProgress: 'Current Progress',
+                nextMilestone: '¥{amount} ({time}) until {milestone}',
+                allMilestonesReached: 'Congratulations! You have reached all milestones!',
+                settingsSummary: 'Salary Settings: '
+            }
+        };
+
+        function updateLanguage(lang) {
+            const texts = languages[lang];
+            document.getElementById('title').textContent = texts.title;
+            document.querySelector('label[for="salary-type"]').textContent = texts.salaryType;
+            document.querySelector('option[value="yearly"]').textContent = texts.yearly;
+            document.querySelector('option[value="monthly"]').textContent = texts.monthly;
+            document.querySelector('option[value="daily"]').textContent = texts.daily;
+            document.querySelector('option[value="hourly"]').textContent = texts.hourly;
+            document.querySelector('label[for="salary-amount"]').textContent = texts.salaryAmount;
+            document.querySelector('label[for="work-hours"]').textContent = texts.workHours;
+            document.querySelector('label[for="work-days"]').textContent = texts.workDays;
+            document.querySelector('label[for="work-start-time"]').textContent = texts.workStartTime;
+            startBtn.textContent = texts.startBtn;
+            document.querySelector('.info-text').textContent = texts.infoText;
+            document.querySelector('.result-card h2').textContent = texts.salaryGrowing;
+            document.querySelector('.result-card > p').textContent = texts.earnedSoFar;
+            document.querySelectorAll('.stat-label')[0].textContent = texts.perSecond;
+            document.querySelectorAll('.stat-label')[1].textContent = texts.perMinute;
+            document.querySelectorAll('.stat-label')[2].textContent = texts.perHour;
+            pauseBtn.textContent = isPaused ? texts.continueBtn : texts.pauseBtn;
+            resetBtn.textContent = texts.resetBtn;
+            toggleSettingsBtn.textContent = isSettingsCollapsed ? texts.expandSettings : texts.collapseSettings;
+
+            // 更新里程碑相关文本
+            document.querySelector('.milestone-section h3').textContent = texts.milestoneProgress;
+            initializeMilestoneMarkers();
+            if (isCalculating) {
+                updateMilestone(parseFloat(currentAmountEl.textContent));
+            }
+
+            // 更新设置摘要
+            updateSettingsSummary();
+        }
+
+        // 初始化
+        salaryTypeEl.value = 'monthly'; // 设置默认薪资类型为月薪
+        updateFieldVisibility();
+
+        // 深色模式切换
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const body = document.body;
+
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
+        });
+
+        // 检查本地存储中的深色模式设置
+        if (localStorage.getItem('darkMode') === 'true') {
+            body.classList.add('dark-mode');
+        }
+
+        languageToggle.addEventListener('click', function() {
+            const currentLang = this.textContent;
+            const newLang = currentLang === 'zh' ? 'en' : 'zh';
+            this.textContent = newLang;
+            updateLanguage(newLang);
+            localStorage.setItem('language', newLang);
+            updateSettingsSummary(); // 添加这一行
+        });
+
+        // 检查本地存储中的语言设置
+        const savedLanguage = localStorage.getItem('language') || 'zh';
+        languageToggle.textContent = savedLanguage;
+        updateLanguage(savedLanguage);
+
+        // 初始化里程碑标记
+        initializeMilestoneMarkers();
+    </script>
+</body>
+</html>
